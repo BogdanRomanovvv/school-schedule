@@ -24,15 +24,15 @@ func (r *TeacherRepo) GetByID(id int) (*domain.Teacher, error) {
 
 func (r *TeacherRepo) Create(t *domain.Teacher) error {
 	return r.db.QueryRow(
-		`INSERT INTO teachers(name, max_hours_per_week) VALUES($1,$2) RETURNING id`,
-		t.Name, t.MaxHoursPerWeek,
+		`INSERT INTO teachers(name, max_hours_per_week, homeroom_class_id) VALUES($1,$2,$3) RETURNING id`,
+		t.Name, t.MaxHoursPerWeek, t.HomeroomClassID,
 	).Scan(&t.ID)
 }
 
 func (r *TeacherRepo) Update(t *domain.Teacher) error {
 	_, err := r.db.Exec(
-		`UPDATE teachers SET name=$1, max_hours_per_week=$2 WHERE id=$3`,
-		t.Name, t.MaxHoursPerWeek, t.ID,
+		`UPDATE teachers SET name=$1, max_hours_per_week=$2, homeroom_class_id=$3 WHERE id=$4`,
+		t.Name, t.MaxHoursPerWeek, t.HomeroomClassID, t.ID,
 	)
 	return err
 }
@@ -70,7 +70,7 @@ func (r *TeacherRepo) RemoveSubject(teacherID, subjectID int) error {
 func (r *TeacherRepo) GetTeachersBySubject(subjectID int) ([]domain.Teacher, error) {
 	list := make([]domain.Teacher, 0)
 	err := r.db.Select(&list, `
-		SELECT t.id, t.name, t.max_hours_per_week FROM teachers t
+		SELECT t.id, t.name, t.max_hours_per_week, t.homeroom_class_id FROM teachers t
 		JOIN teacher_subjects ts ON ts.teacher_id = t.id
 		WHERE ts.subject_id = $1`, subjectID)
 	return list, err

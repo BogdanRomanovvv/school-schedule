@@ -76,6 +76,47 @@ func TestGenerate_OverloadedTeacher(t *testing.T) {
 	}
 }
 
+// Классный руководитель ведёт предмет только в своём классе
+func TestGenerate_HomeroomTeacher(t *testing.T) {
+	classID1, classID2 := 1, 2
+
+	curricula := []domain.Curriculum{
+		{ClassID: classID1, SubjectID: 1, HoursPerWeek: 3}, // математика в 1 кл
+		{ClassID: classID2, SubjectID: 1, HoursPerWeek: 3}, // математика во 2 кл
+	}
+	homeroom1 := classID1
+	teachers := []domain.Teacher{
+		// Классный руков. класса 1 — ведёт математику только в классе 1
+		{ID: 10, Name: "Классрук1", MaxHoursPerWeek: 36, HomeroomClassID: &homeroom1},
+		// Обычный учитель — ведёт математику в классе 2
+		{ID: 20, Name: "МатОбычный", MaxHoursPerWeek: 36},
+	}
+	teacherSubjects := map[int][]int{
+		10: {1},
+		20: {1},
+	}
+
+	gen := scheduler.NewGenerator(curricula, teachers, teacherSubjects)
+	entries, err := gen.Generate()
+	if err != nil {
+		t.Fatalf("Generate failed: %v", err)
+	}
+
+	// Проверяем: учитель 10 должен вести ТОЛЬКО класс 1
+	for _, e := range entries {
+		if e.TeacherID == 10 && e.ClassID != classID1 {
+			t.Errorf("homeroom teacher 10 assigned to class %d, expected only class %d", e.ClassID, classID1)
+		}
+	}
+	// Проверяем: класс 2 ведёт учитель 20
+	for _, e := range entries {
+		if e.ClassID == classID2 && e.TeacherID != 20 {
+			t.Errorf("class 2 lesson taught by teacher %d, expected 20", e.TeacherID)
+		}
+	}
+	assertNoConflicts(t, entries)
+}
+
 // Проверка отсутствия конфликтов
 func assertNoConflicts(t *testing.T, entries []domain.ScheduleEntry) {
 	t.Helper()
