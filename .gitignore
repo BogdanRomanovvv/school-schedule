@@ -16,3 +16,7 @@ pgdata/
 # OS
 .DS_Store
 Thumbs.db
+
+# Временные и вспомогательные файлы
+build_log.txt
+expand.sql
